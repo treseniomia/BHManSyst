@@ -1,6 +1,13 @@
 // app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
-import { LayoutDashboard, Bed, Users } from "lucide-react-native";
+import {
+  LayoutDashboard,
+  Bed,
+  Users,
+  Receipt,
+  Settings,
+} from "lucide-react-native";
+import React from "react";
 
 export default function TabLayout() {
   return (
@@ -43,6 +50,24 @@ export default function TabLayout() {
           title: "Tenants",
           headerShown: false,
           tabBarIcon: ({ color }) => <Users color={color} size={24} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: "History",
+          headerShown: false,
+          tabBarIcon: ({ color }) => <Receipt size={24} color={color} />,
+        }}
+      />
+
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          headerShown: false,
+          tabBarIcon: ({ color }) => <Settings size={24} color={color} />,
         }}
       />
     </Tabs>

@@ -23,19 +23,15 @@ import {
   Bed as BedIcon,
   Phone,
   MessageSquare,
-  CheckCircle,
-  Clock,
-  X,
   User,
-  DollarSign,
-  AlertCircle,
   Calendar,
+  Plus,
 } from "lucide-react-native";
 
 interface Bed {
   id: string;
   label: string;
-  status: "vacant" | "occupied" | "overdue" | "advance"; // Added "advance"
+  status: "vacant" | "occupied" | "overdue" | "advance";
   tenant?: string;
   phone?: string;
   dueDate?: string;
@@ -45,6 +41,8 @@ interface Bed {
 
 export default function RoomDetailScreen() {
   const { id } = useLocalSearchParams();
+
+  // States para sa Beds
   const [beds, setBeds] = useState<Bed[]>([
     {
       id: "1",
@@ -79,15 +77,21 @@ export default function RoomDetailScreen() {
     { id: "4", label: "2-Bottom", status: "vacant" },
   ]);
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  // Modal States
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [selectedBed, setSelectedBed] = useState<Bed | null>(null);
 
+  // Form States (Edit)
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editDue, setEditDue] = useState("");
   const [editPayDate, setEditPayDate] = useState("");
   const [editAmount, setEditAmount] = useState("");
   const [currentStatus, setCurrentStatus] = useState<Bed["status"]>("vacant");
+
+  // Form States (Add)
+  const [newBedLabel, setNewBedLabel] = useState("");
 
   const handleOpenDetails = (bed: Bed) => {
     setSelectedBed(bed);
@@ -97,7 +101,7 @@ export default function RoomDetailScreen() {
     setEditPayDate(bed.lastPaymentDate || "");
     setEditAmount(bed.lastPaymentAmount || "");
     setCurrentStatus(bed.status);
-    setIsModalVisible(true);
+    setIsEditModalVisible(true);
   };
 
   const handleSaveChanges = () => {
@@ -117,8 +121,23 @@ export default function RoomDetailScreen() {
       return b;
     });
     setBeds(updatedBeds as Bed[]);
-    setIsModalVisible(false);
+    setIsEditModalVisible(false);
     Alert.alert("Success", "Record updated!");
+  };
+
+  const handleAddBed = () => {
+    if (!newBedLabel.trim()) {
+      Alert.alert("Error", "Please enter a bed label (e.g., 3-Top)");
+      return;
+    }
+    const newBed: Bed = {
+      id: Date.now().toString(),
+      label: newBedLabel,
+      status: "vacant",
+    };
+    setBeds([...beds, newBed]);
+    setNewBedLabel("");
+    setIsAddModalVisible(false);
   };
 
   const cycleStatus = () => {
@@ -144,7 +163,7 @@ export default function RoomDetailScreen() {
       <View style={styles.infoSection}>
         <Text style={styles.infoTitle}>Room {id} Layout</Text>
         <Text style={styles.infoSub}>
-          Tap a bed to manage tenant or toggle payment status
+          Manage tenants or add more beds to this room
         </Text>
       </View>
 
@@ -205,10 +224,19 @@ export default function RoomDetailScreen() {
         contentContainerStyle={styles.list}
       />
 
+      {/* FLOATING ACTION BUTTON PARA SA ADD BED */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setIsAddModalVisible(true)}
+      >
+        <Plus color="#FFF" size={28} />
+      </TouchableOpacity>
+
       <Portal>
+        {/* MODAL PARA SA EDIT TENANT */}
         <Modal
-          visible={isModalVisible}
-          onDismiss={() => setIsModalVisible(false)}
+          visible={isEditModalVisible}
+          onDismiss={() => setIsEditModalVisible(false)}
           contentContainerStyle={styles.modalContent}
         >
           {selectedBed && (
@@ -218,12 +246,10 @@ export default function RoomDetailScreen() {
                 <IconButton
                   icon="close"
                   size={24}
-                  onPress={() => setIsModalVisible(false)}
+                  onPress={() => setIsEditModalVisible(false)}
                 />
               </View>
-
               <Divider style={styles.divider} />
-
               <View style={styles.statusToggleRow}>
                 <Text style={styles.sectionLabel}>PAYMENT STATUS:</Text>
                 <TouchableOpacity
@@ -261,7 +287,6 @@ export default function RoomDetailScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-
               <View style={styles.inputGroup}>
                 <TextInput
                   label="Full Name"
@@ -293,7 +318,6 @@ export default function RoomDetailScreen() {
                   activeOutlineColor="#4F46E5"
                 />
               </View>
-
               <View style={styles.paymentContainer}>
                 <View style={styles.paymentRow}>
                   <TextInput
@@ -306,7 +330,7 @@ export default function RoomDetailScreen() {
                     outlineColor="#E2E8F0"
                   />
                   <TextInput
-                    label="Rent Amount"
+                    label="Rent"
                     mode="outlined"
                     value={editAmount}
                     onChangeText={setEditAmount}
@@ -322,7 +346,6 @@ export default function RoomDetailScreen() {
                   value={editPayDate}
                   onChangeText={setEditPayDate}
                   style={styles.input}
-                  placeholder="Jan 20"
                   left={
                     <TextInput.Icon
                       icon={() => <Calendar size={18} color="#64748B" />}
@@ -331,7 +354,6 @@ export default function RoomDetailScreen() {
                   outlineColor="#E2E8F0"
                 />
               </View>
-
               <View style={styles.actionGrid}>
                 <TouchableOpacity
                   style={styles.actionBtn}
@@ -356,7 +378,6 @@ export default function RoomDetailScreen() {
                   <Text style={styles.actionLabel}>SMS</Text>
                 </TouchableOpacity>
               </View>
-
               <Button
                 mode="contained"
                 onPress={handleSaveChanges}
@@ -367,6 +388,53 @@ export default function RoomDetailScreen() {
               </Button>
             </View>
           )}
+        </Modal>
+
+        {/* MODAL PARA SA ADD BED */}
+        <Modal
+          visible={isAddModalVisible}
+          onDismiss={() => setIsAddModalVisible(false)}
+          contentContainerStyle={styles.modalContent}
+        >
+          <View>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add New Bed</Text>
+              <IconButton
+                icon="close"
+                size={24}
+                onPress={() => setIsAddModalVisible(false)}
+              />
+            </View>
+            <Divider style={styles.divider} />
+            <TextInput
+              label="Bed Label (e.g. 3-Top)"
+              mode="outlined"
+              value={newBedLabel}
+              onChangeText={setNewBedLabel}
+              style={styles.input}
+              outlineColor="#E2E8F0"
+              activeOutlineColor="#4F46E5"
+              placeholder="Enter bed designation"
+            />
+            <Text
+              style={{
+                fontSize: 12,
+                color: "#94A3B8",
+                marginTop: 8,
+                marginBottom: 20,
+              }}
+            >
+              This will add a vacant bed to Room {id}.
+            </Text>
+            <Button
+              mode="contained"
+              onPress={handleAddBed}
+              style={styles.saveBtn}
+              contentStyle={{ height: 50 }}
+            >
+              Add Bed to Room
+            </Button>
+          </View>
         </Modal>
       </Portal>
     </View>
@@ -424,7 +492,7 @@ const styles = StyleSheet.create({
   },
   statusToggleText: { fontWeight: "900", fontSize: 13 },
   inputGroup: { gap: 4, marginBottom: 15 },
-  input: { backgroundColor: "#FFF", fontSize: 14 },
+  input: { backgroundColor: "#FFF", fontSize: 14, marginBottom: 10 },
   paymentContainer: { marginBottom: 20 },
   paymentRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
   actionGrid: {
@@ -444,4 +512,20 @@ const styles = StyleSheet.create({
   },
   actionLabel: { fontSize: 12, fontWeight: "800" },
   saveBtn: { backgroundColor: "#4F46E5", borderRadius: 15 },
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    backgroundColor: "#4F46E5",
+    width: 60,
+    height: 60,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
 });
